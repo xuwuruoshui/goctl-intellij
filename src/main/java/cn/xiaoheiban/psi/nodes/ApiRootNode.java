@@ -105,7 +105,7 @@ public class ApiRootNode extends IPsiNode implements ScopeNode {
             Set<VirtualFile> relativeFiles = new ArrayListSet<>();
             Set<PsiFile> psiFiles = new ArrayListSet<>();
             for (String importPath : expectedPath) {
-                VirtualFile fileByRelativePath = virtualFile.findFileByRelativePath(importPath);
+                VirtualFile fileByRelativePath = findFileByRelativePath(virtualFile, importPath);
                 if (fileByRelativePath == null) {
                     continue;
                 }
@@ -292,7 +292,7 @@ public class ApiRootNode extends IPsiNode implements ScopeNode {
             Set<VirtualFile> relativeFiles = new ArrayListSet<>();
             Set<PsiFile> psiFiles = new ArrayListSet<>();
             for (String importPath : expectedPath) {
-                VirtualFile fileByRelativePath = virtualFile.findFileByRelativePath(importPath);
+                VirtualFile fileByRelativePath = findFileByRelativePath(virtualFile, importPath);
                 if (fileByRelativePath == null) {
                     continue;
                 }
@@ -344,6 +344,40 @@ public class ApiRootNode extends IPsiNode implements ScopeNode {
             e.printStackTrace();
         }
         return null;
+    }
+
+    /**
+     * 按当前 API 文件所在目录解析导入路径，并支持 {@code .}、{@code ..} 与 Windows 路径分隔符。
+     *
+     * @param baseDirectory 当前 API 文件所在目录
+     * @param relativePath  API import 中声明的相对路径
+     * @return 解析到的虚拟文件；路径无效或越过文件系统根目录时返回 {@code null}
+     */
+    static @Nullable VirtualFile findFileByRelativePath(@NotNull VirtualFile baseDirectory,
+                                                        @NotNull String relativePath) {
+        // 1. 统一路径分隔符，确保 Windows 与 Unix 风格的 import 使用同一套解析逻辑。
+        String normalizedPath = relativePath.replace('\\', '/');
+        VirtualFile current = baseDirectory;
+
+        // 2. 逐段解析路径，显式处理父目录，避免 VirtualFile 对 "../" 的兼容性差异。
+        for (String segment : normalizedPath.split("/")) {
+            if (segment.isEmpty() || ".".equals(segment)) {
+                continue;
+            }
+
+            if ("..".equals(segment)) {
+                current = current.getParent();
+            } else {
+                current = current.findChild(segment);
+            }
+
+            // 3. 任意路径段不存在时立即结束，交由上层保留未解析引用提示。
+            if (current == null) {
+                return null;
+            }
+        }
+
+        return current;
     }
 
     public @Nullable PsiElement resolve(ScopeNode scope, PsiNamedElement element, String basePath) {

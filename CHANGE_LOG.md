@@ -1,3 +1,7 @@
+# 2026-07-07(1.2.4)
+- 支持包含 `./`、`../` 的 API 相对导入路径
+- 修复跨目录公共类型在 GoLand 中无法解析的问题
+
 # 2025-03-24(1.2.0)
 - 升级插件到 2.0 版本
 - 修复 `java.lang.Throwable: 'virtualFile' is requested on EDT...` 问题

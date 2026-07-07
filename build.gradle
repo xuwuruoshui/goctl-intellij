@@ -28,10 +28,12 @@ dependencies {
         exclude group: 'com.ibm.icu', module: 'icu4j'
     }
     implementation fileTree(dir:'libs',include:['*.jar'])
+    testImplementation 'junit:junit:4.13.2'
     intellijPlatform {
         intellijIdeaCommunity '2024.3.5'
 
         bundledPlugin 'com.intellij.java'
+        testFramework org.jetbrains.intellij.platform.gradle.TestFrameworkType.Platform.INSTANCE
     }
 }
 
@@ -39,7 +41,7 @@ patchPluginXml {
     sinceBuild = '222.0'
     changeNotes = """
     <ul>
-       <li>fix duplicate route syntax</li>
+       <li>支持包含 ./、../ 的 API 相对导入路径</li>
     </ul>
     """
 }
